@@ -4,10 +4,76 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USER)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  name      String
+  sku       String @unique
+  dimension String
+  baseUnit  String
+
+  inventoryQuantity Decimal @db.Decimal(30, 10)
+
+  pricePerBaseUnit Decimal @db.Decimal(30, 10)
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  status String @default("PENDING")
+
+  totalAmount Decimal     @db.Decimal(30, 10)
+  items       OrderItem[]
+
+  createdAt DateTime @default(now())
+}
+
+model OrderItem {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  enteredUnitQuantity Decimal @db.Decimal(30, 10)
+
+  enteredUnit String
+
+  baseQuantity Decimal @db.Decimal(30, 10)
+
+  unitPrice Decimal @db.Decimal(30, 10)
+  subtotal  Decimal @db.Decimal(30, 10)
 }
